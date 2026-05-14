@@ -174,6 +174,14 @@ header p  { font-size: 0.7rem; color: #555; margin-top: 3px; letter-spacing: 1px
   <button class="btn btn-primary" id="btn-manual">📸 Tirar Foto</button>
 </div>
 
+<!-- EDUCAÇÃO (Ancestralidade) -->
+<div class="section" id="sec-education">
+  <p class="section-title">Entenda seu Rosto</p>
+  <div id="education-content"></div>
+  <button class="btn btn-primary" id="btn-prosseguir-analise">Continuar →</button>
+  <button class="btn btn-ghost" id="btn-refazer-edu">Tirar nova foto</button>
+</div>
+
 <!-- MEIAS FACES -->
 <div class="section" id="sec-faces">
   <p class="section-title">Análise Visual</p>
@@ -589,7 +597,14 @@ function dispararCaptura() {
   }
 
   S.capturedImg = new Image();
-  S.capturedImg.onload = () => { pararCamera(); gerarMeiasFaces(); show('sec-faces'); };
+  S.capturedImg.onload = () => {
+    pararCamera();
+    gerarMeiasFaces();
+    setTimeout(() => {
+      mostrarEducacao();
+      show('sec-education');
+    }, 150);
+  };
   S.capturedImg.src = dataUrl;
 }
 
@@ -633,6 +648,60 @@ function gerarMeiasFaces() {
   ldupC.save(); ldupC.translate(SZ,0); ldupC.scale(-1,1);
   ldupC.drawImage(tmp, 0, 0, cx, h, 0, 0, SZ/2, SZ); ldupC.restore();
 }
+
+function mostrarEducacao() {
+  const eduContent = document.getElementById('education-content');
+  eduContent.innerHTML = '';
+
+  // Pegar a imagem original já gerada
+  const origCanvas = document.getElementById('origCanvas');
+  const canvas = document.createElement('canvas');
+  canvas.width = 250; canvas.height = 250;
+  const ctx = canvas.getContext('2d');
+
+  // Copiar a imagem original
+  ctx.drawImage(origCanvas, 0, 0, 250, 250);
+
+  // Linha divisória vertical no meio
+  ctx.strokeStyle = '#C4973A'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(125, 0); ctx.lineTo(125, 250); ctx.stroke();
+
+  const container = document.createElement('div');
+  container.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:16px;';
+
+  const canvasContainer = document.createElement('div');
+  canvasContainer.style.cssText = 'display:flex; justify-content:center;';
+  canvasContainer.appendChild(canvas);
+
+  const text = document.createElement('div');
+  text.style.cssText = 'font-size:0.9rem; line-height:1.7; color:#bbb; text-align:center;';
+  text.innerHTML = `
+    <p style="margin-bottom:12px;"><strong style="color:#C4973A">Seu rosto tem histórias</strong></p>
+    <p style="margin-bottom:12px;">
+      <span style="color:#C4973A">Lado Direito (Herança Paterna)</span><br>
+      Cada lado do seu rosto carrega características genéticas diferentes. Isso é completamente natural.
+    </p>
+    <p>
+      <span style="color:#C4973A">Lado Esquerdo (Herança Materna)</span><br>
+      Essas diferenças (assimetrias) são ferramentas poderosas para compensação visual no corte de cabelo.
+    </p>
+  `;
+
+  container.appendChild(canvasContainer);
+  container.appendChild(text);
+  eduContent.appendChild(container);
+}
+
+document.getElementById('btn-prosseguir-analise').addEventListener('click', () => { show('sec-faces'); });
+document.getElementById('btn-refazer-edu').addEventListener('click', () => {
+  cancelarContagem(); encaixado = false; okFrames = 0;
+  ultimosLandmarks = null;
+  const ctx = maskCanvas.getContext('2d'); ctx.clearRect(0,0,maskCanvas.width,maskCanvas.height);
+  crossH.classList.remove('hide'); crossV.classList.remove('hide'); crossDot.classList.remove('hide');
+  statusText.textContent = 'Centralize seu rosto'; statusText.className = 'hint';
+  mpLoading.style.display = 'flex';
+  show('sec-camera'); iniciarCamera();
+});
 
 document.getElementById('btn-comecar-quiz').addEventListener('click', () => { show('sec-quiz'); setTimeout(iniciarQuiz, 80); });
 document.getElementById('btn-refazer').addEventListener('click', () => {
