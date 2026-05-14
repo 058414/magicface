@@ -653,25 +653,25 @@ function mostrarEducacao() {
   const eduContent = document.getElementById('education-content');
   eduContent.innerHTML = '';
 
-  // Pegar a imagem original já gerada
-  const origCanvas = document.getElementById('origCanvas');
   const canvas = document.createElement('canvas');
   canvas.width = 250; canvas.height = 250;
   const ctx = canvas.getContext('2d');
 
-  // Copiar a imagem original
-  ctx.drawImage(origCanvas, 0, 0, 250, 250);
+  // Desenhar a imagem original
+  ctx.drawImage(S.capturedImg, 0, 0, S.capturedImg.naturalWidth, S.capturedImg.naturalHeight, 0, 0, 250, 250);
 
-  // Linha divisória vertical — usando landmarks para encontrar o meio do rosto
+  // Linha divisória vertical — usando landmarks para encontrar o meio do nariz
   // Landmark 1 é a ponta do nariz (naris)
   let linhaX = 125; // default no meio
   if (ultimosLandmarks && ultimosLandmarks.length > 1) {
-    // Converter coordenada normalizada para pixel (e inverter por espelhamento)
-    const narizX = 1 - ultimosLandmarks[1].x; // inverte por espelhamento
+    // Os landmarks estão em coordenadas normalizadas (0-1)
+    // Converter para pixels do canvas (250px)
+    // Landmark da câmera está espelhado, então: (1 - x)
+    const narizX = 1 - ultimosLandmarks[1].x;
     linhaX = narizX * 250;
   }
 
-  ctx.strokeStyle = '#C4973A'; ctx.lineWidth = 2;
+  ctx.strokeStyle = '#C4973A'; ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.moveTo(linhaX, 0); ctx.lineTo(linhaX, 250); ctx.stroke();
 
   const container = document.createElement('div');
