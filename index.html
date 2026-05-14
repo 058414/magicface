@@ -779,7 +779,23 @@ async function iniciarQuiz() {
     { label: 'Diagonais',             value: 'diagonais' }
   ]);
 
-  await msg('Analisando...'); await wait(850);
+  await msg('Qual seu biotipo / formato do corpo?');
+  S.quiz.biotipo = await opts([
+    { label: 'Retângulo',             value: 'retangulo'  },
+    { label: 'Pêra',                  value: 'pera'       },
+    { label: 'Triângulo invertido',   value: 'triangulo'  },
+    { label: 'Ampulheta',             value: 'ampulheta'  },
+    { label: 'Oval',                  value: 'oval'       }
+  ]);
+
+  await msg('Que linhas predominam no seu corpo?');
+  S.quiz.linhasCorpo = await opts([
+    { label: 'Retas',                 value: 'retas'     },
+    { label: 'Curvas',                value: 'curvas'    },
+    { label: 'Mistura',               value: 'mistura'   }
+  ]);
+
+  await msg('Analisando seu perfil...'); await wait(850);
   gerarResultado(); show('sec-result');
 }
 
@@ -812,17 +828,27 @@ function gerarResultado() {
     diagonais: { classe:'Dinâmica / Instável',alerta:'Excesso de diagonais gera agitação visual.',                                  sugestao:'Equilibre com retas frias: gola quadrada, brincos verticais simples.' }
   };
 
+  const corpoMap = {
+    retangulo:  'Retângulo — Corpo com linhas RETAS. Precisa quebrar com curva/diagonal na cintura.',
+    pera:       'Pêra — Largo em baixo. Corte que expanda ombros ou alongue a silhueta.',
+    triangulo:  'Triângulo invertido — Largo em cima. Corte que expanda quadril/cintura para equilibrar.',
+    ampulheta:  'Ampulheta — Curvas naturais. Reforce a curva com o corte.',
+    oval:       'Oval — Versátil. Use linhas retas ou diagonais para afinar.'
+  };
+
   S.resultado = {
     imagens: {
-      meiaFaceEsquerda: document.getElementById('leftCanvas').toDataURL('image/jpeg',0.75),
-      original:         document.getElementById('origCanvas').toDataURL('image/jpeg',0.75),
-      meiaFaceDireita:  document.getElementById('rightCanvas').toDataURL('image/jpeg',0.75)
+      ladoDireitoDuplicado:    document.getElementById('rightDupCanvas').toDataURL('image/jpeg',0.75),
+      original:                document.getElementById('origCanvas').toDataURL('image/jpeg',0.75),
+      ladoEsquerdoDuplicado:   document.getElementById('leftDupCanvas').toDataURL('image/jpeg',0.75)
     },
     quiz: q,
     analise: {
       compensacaoAssimetria: comp,
       analiseFrenja: { situacao: q.franja, sugestao: franjaMap[q.franja] },
-      analiseLinhas: linhasMap[q.linhasRosto]
+      analiseLinhas: linhasMap[q.linhasRosto],
+      analiseBiotipo: corpoMap[q.biotipo],
+      linhasCorpo: q.linhasCorpo
     }
   };
   renderCards(S.resultado);
@@ -831,9 +857,29 @@ function gerarResultado() {
 function renderCards(res) {
   const c = document.getElementById('cards-resultado'); c.innerHTML = '';
   const a = res.analise;
+
+  // Mostrar as 3 faces
+  mkCard(c, 'Sua Análise Visual', `
+    <div style="display:flex; gap:8px; justify-content:center; margin-bottom:16px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+        <img src="${res.imagens.ladoDireitoDuplicado}" style="width:100%; border-radius:8px; border:1px solid #222;">
+        <span style="font-size:0.65rem; color:#555; text-align:center;">Lado Direito<br>Duplicado</span>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+        <img src="${res.imagens.original}" style="width:100%; border-radius:8px; border:1px solid #222;">
+        <span style="font-size:0.65rem; color:#555; text-align:center;">Você</span>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+        <img src="${res.imagens.ladoEsquerdoDuplicado}" style="width:100%; border-radius:8px; border:1px solid #222;">
+        <span style="font-size:0.65rem; color:#555; text-align:center;">Lado Esquerdo<br>Duplicado</span>
+      </div>
+    </div>
+  `);
+
   mkCard(c,'Compensação de Assimetria',`<p><span class="tag">${a.compensacaoAssimetria.efeito}</span></p><p>${a.compensacaoAssimetria.explicacao}</p>`);
   if (a.analiseFrenja.sugestao) mkCard(c,'Análise de Franja',`<p>${a.analiseFrenja.sugestao}</p>`);
-  mkCard(c,'Suas Linhas — '+a.analiseLinhas.classe,`<p><span class="tag">Atenção</span> ${a.analiseLinhas.alerta}</p><p><span class="tag">Sugestão</span> ${a.analiseLinhas.sugestao}</p>`);
+  mkCard(c,'Suas Linhas do Rosto — '+a.analiseLinhas.classe,`<p><span class="tag">Atenção</span> ${a.analiseLinhas.alerta}</p><p><span class="tag">Sugestão</span> ${a.analiseLinhas.sugestao}</p>`);
+  mkCard(c,'Seu Biotipo',`<p>${a.analiseBiotipo}</p><p style="margin-top:8px; font-size:0.8rem; color:#888;">Linhas do corpo: <strong>${a.linhasCorpo}</strong></p>`);
   document.getElementById('json-raw').textContent = JSON.stringify({ quiz: res.quiz, analise: res.analise }, null, 2);
 }
 
