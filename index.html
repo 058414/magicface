@@ -662,9 +662,17 @@ function mostrarEducacao() {
   // Copiar a imagem original
   ctx.drawImage(origCanvas, 0, 0, 250, 250);
 
-  // Linha divisória vertical no meio
+  // Linha divisória vertical — usando landmarks para encontrar o meio do rosto
+  // Landmark 1 é a ponta do nariz (naris)
+  let linhaX = 125; // default no meio
+  if (ultimosLandmarks && ultimosLandmarks.length > 1) {
+    // Converter coordenada normalizada para pixel (e inverter por espelhamento)
+    const narizX = 1 - ultimosLandmarks[1].x; // inverte por espelhamento
+    linhaX = narizX * 250;
+  }
+
   ctx.strokeStyle = '#C4973A'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(125, 0); ctx.lineTo(125, 250); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(linhaX, 0); ctx.lineTo(linhaX, 250); ctx.stroke();
 
   const container = document.createElement('div');
   container.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:16px;';
@@ -674,16 +682,31 @@ function mostrarEducacao() {
   canvasContainer.appendChild(canvas);
 
   const text = document.createElement('div');
-  text.style.cssText = 'font-size:0.9rem; line-height:1.7; color:#bbb; text-align:center;';
+  text.style.cssText = 'font-size:0.95rem; line-height:1.8; color:#bbb; text-align:center;';
   text.innerHTML = `
-    <p style="margin-bottom:12px;"><strong style="color:#C4973A">Seu rosto tem histórias</strong></p>
-    <p style="margin-bottom:12px;">
-      <span style="color:#C4973A">Lado Direito (Herança Paterna)</span><br>
-      Cada lado do seu rosto carrega características genéticas diferentes. Isso é completamente natural.
+    <p style="margin-bottom:16px; font-size:1.1rem;"><strong style="color:#C4973A">Seu rosto conta sua história</strong></p>
+
+    <p style="margin-bottom:14px;">
+      Observe a linha que divide seu rosto. Ela marca uma transição importante — cada lado carrega uma herança genética e energética diferente.
     </p>
-    <p>
-      <span style="color:#C4973A">Lado Esquerdo (Herança Materna)</span><br>
-      Essas diferenças (assimetrias) são ferramentas poderosas para compensação visual no corte de cabelo.
+
+    <p style="margin-bottom:14px;">
+      <span style="color:#C4973A; font-weight:600;">Lado Direito (Herança Paterna)</span><br>
+      Este lado reflete características genéticas da linhagem paterna. Ele representa força, estrutura e os traços que você herdou dessa linha ancestral.
+    </p>
+
+    <p style="margin-bottom:14px;">
+      <span style="color:#C4973A; font-weight:600;">Lado Esquerdo (Herança Materna)</span><br>
+      Este lado reflete características genéticas da linhagem materna. Ele carrega sensibilidade, expressão e os traços que você herdou dessa outra linha ancestral.
+    </p>
+
+    <p style="margin-bottom:14px;">
+      <span style="color:#C4973A; font-weight:600;">A assimetria é seu superpoder</span><br>
+      As diferenças entre os dois lados não são imperfeições — são ferramentas poderosas para compensação visual. Um bom corte de cabelo trabalha COM essas diferenças naturais, não contra elas.
+    </p>
+
+    <p style="font-size:0.9rem; color:#888;">
+      Vamos usar essas informações para encontrar o corte que realmente funciona no seu rosto.
     </p>
   `;
 
