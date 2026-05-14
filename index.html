@@ -179,16 +179,16 @@ header p  { font-size: 0.7rem; color: #555; margin-top: 3px; letter-spacing: 1px
   <p class="section-title">Análise Visual</p>
   <div class="faces-row">
     <div class="face-card">
-      <canvas id="leftCanvas" width="250" height="250"></canvas>
-      <span class="face-lbl">Meia Face<br>Esquerda<br><span style="color:#C4973A33">Herança Paterna</span></span>
+      <canvas id="rightDupCanvas" width="250" height="250"></canvas>
+      <span class="face-lbl">Lado Direito<br>+ Lado Direito</span>
     </div>
     <div class="face-card">
       <canvas id="origCanvas" width="250" height="250" class="destaque"></canvas>
-      <span class="face-lbl" style="color:#555">Você</span>
+      <span class="face-lbl" style="color:#555">Normal</span>
     </div>
     <div class="face-card">
-      <canvas id="rightCanvas" width="250" height="250"></canvas>
-      <span class="face-lbl">Meia Face<br>Direita<br><span style="color:#C4973A33">Herança Materna</span></span>
+      <canvas id="leftDupCanvas" width="250" height="250"></canvas>
+      <span class="face-lbl">Lado Esquerdo<br>+ Lado Esquerdo</span>
     </div>
   </div>
   <button class="btn btn-primary" id="btn-comecar-quiz">Iniciar Análise →</button>
@@ -610,21 +610,28 @@ function gerarMeiasFaces() {
   tmp.getContext('2d').drawImage(img, 0, 0, w, h);
 
   const SZ = 250, cx = w / 2;
-  const lc = document.getElementById('leftCanvas').getContext('2d');
+  const rdupC = document.getElementById('rightDupCanvas').getContext('2d');
   const oc = document.getElementById('origCanvas').getContext('2d');
-  const rc = document.getElementById('rightCanvas').getContext('2d');
+  const ldupC = document.getElementById('leftDupCanvas').getContext('2d');
 
+  // Original
   oc.clearRect(0,0,SZ,SZ); oc.drawImage(tmp, 0, 0, w, h, 0, 0, SZ, SZ);
 
-  lc.clearRect(0,0,SZ,SZ);
-  lc.drawImage(tmp, 0, 0, cx, h, 0, 0, SZ/2, SZ);
-  lc.save(); lc.translate(SZ,0); lc.scale(-1,1);
-  lc.drawImage(tmp, 0, 0, cx, h, 0, 0, SZ/2, SZ); lc.restore();
+  // Lado DIREITO duplicado (lado direito espelhado + lado direito original)
+  rdupC.clearRect(0,0,SZ,SZ);
+  // Lado direito espelhado (esquerda)
+  rdupC.save(); rdupC.translate(SZ/2,0); rdupC.scale(-1,1);
+  rdupC.drawImage(tmp, cx, 0, cx, h, 0, 0, SZ/2, SZ); rdupC.restore();
+  // Lado direito original (direita)
+  rdupC.drawImage(tmp, cx, 0, cx, h, SZ/2, 0, SZ/2, SZ);
 
-  rc.clearRect(0,0,SZ,SZ);
-  rc.drawImage(tmp, cx, 0, cx, h, 0, 0, SZ/2, SZ);
-  rc.save(); rc.translate(SZ,0); rc.scale(-1,1);
-  rc.drawImage(tmp, cx, 0, cx, h, 0, 0, SZ/2, SZ); rc.restore();
+  // Lado ESQUERDO duplicado (lado esquerdo original + lado esquerdo espelhado)
+  ldupC.clearRect(0,0,SZ,SZ);
+  // Lado esquerdo original (esquerda)
+  ldupC.drawImage(tmp, 0, 0, cx, h, 0, 0, SZ/2, SZ);
+  // Lado esquerdo espelhado (direita)
+  ldupC.save(); ldupC.translate(SZ,0); ldupC.scale(-1,1);
+  ldupC.drawImage(tmp, 0, 0, cx, h, 0, 0, SZ/2, SZ); ldupC.restore();
 }
 
 document.getElementById('btn-comecar-quiz').addEventListener('click', () => { show('sec-quiz'); setTimeout(iniciarQuiz, 80); });
