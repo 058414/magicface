@@ -441,7 +441,7 @@ function desenharMascara(landmarks, isEncaixado) {
   let sumX = 0;
   for (const lm of landmarks) sumX += (1 - lm.x) * dw;
   const centerX = sumX / landmarks.length;
-  const EXPANSION_FACTOR = 1.2; // ajustável (reduzido para mobile)
+  const EXPANSION_FACTOR = 1.0; // ajustável (sem expansão lateral)
 
   // Converter landmark (normalizado) → pixel no canvas (com espelhamento invertido)
   function p(idx) {
