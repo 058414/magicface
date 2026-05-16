@@ -192,8 +192,57 @@ header p  { font-size: 0.7rem; color: #555; margin-top: 3px; letter-spacing: 1px
       <span class="face-lbl">Meia Face<br>Direita<br><span style="color:#C4973A33">Herança Materna</span></span>
     </div>
   </div>
-  <button class="btn btn-primary" id="btn-comecar-quiz">Iniciar Análise →</button>
+  <button class="btn btn-primary" id="btn-comecar-educacao">Entender Meu Rosto →</button>
   <button class="btn btn-ghost"   id="btn-refazer">Tirar nova foto</button>
+</div>
+
+<!-- EDUCAÇÃO / ANCESTRALIDADE -->
+<div class="section" id="sec-education">
+  <p class="section-title">Suas Heranças Faciais</p>
+
+  <div style="background: #111; border: 1px solid #222; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <canvas id="education-canvas" width="280" height="340" style="width: 100%; border-radius: 8px; border: 1px solid #333;"></canvas>
+    </div>
+
+    <div style="font-size: 0.88rem; line-height: 1.7; color: #bbb; margin-bottom: 12px;">
+      <p style="margin-bottom: 10px;">
+        <strong style="color: #C4973A;">Você é uma combinação única de duas heranças genéticas.</strong>
+      </p>
+
+      <p style="margin-bottom: 12px;">
+        <strong style="color: #FFD700;">🟠 Herança Paterna</strong> — Lado Esquerdo<br>
+        Os traços marcantes que definem sua estrutura facial:
+      </p>
+      <ul style="margin-left: 16px; margin-bottom: 12px; list-style: none;">
+        <li>✓ Mandíbula (força, definição)</li>
+        <li>✓ Maçãs do rosto (volume, altura dos traços)</li>
+        <li>✓ Nariz (estrutura, projeção)</li>
+      </ul>
+
+      <p style="margin-bottom: 12px;">
+        <strong style="color: #FFD700;">🟣 Herança Materna</strong> — Lado Direito<br>
+        Os traços que trazem suavidade, expressão e delicadeza:
+      </p>
+      <ul style="margin-left: 16px; margin-bottom: 12px; list-style: none;">
+        <li>✓ Suavidade nos traços (arredondamentos, curvas)</li>
+        <li>✓ Expressão natural (olhos, sorriso)</li>
+        <li>✓ Proporções delicadas</li>
+      </ul>
+
+      <p style="margin-bottom: 12px; color: #999; font-size: 0.82rem;">
+        Estudos genéticos identificam <strong>32 regiões faciais</strong> onde a herança se expressa. Sua assimetria natural não é uma imperfeição — é seu "superpoder" para compensação visual.
+      </p>
+
+      <p style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #333; color: #C4973A; font-size: 0.85rem;">
+        🔍 <strong>O que você vai aprender:</strong><br>
+        Como usar essas assimetrias naturais para escolher um corte que realmente equilibra seu rosto e potencializa sua presença.
+      </p>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-para-quiz">Continuar com o Questionário →</button>
+  <button class="btn btn-ghost" id="btn-voltar-faces">Voltar</button>
 </div>
 
 <!-- QUIZ -->
@@ -620,25 +669,94 @@ function gerarMeiasFaces() {
   tmp.width = w; tmp.height = h;
   tmp.getContext('2d').drawImage(img, 0, 0, w, h);
 
-  const SZ = 250, cx = w / 2;
+  const SZ = 250;
+  const half = SZ / 2;
+  const mid = w / 2;
+
   const lc = document.getElementById('leftCanvas').getContext('2d');
   const oc = document.getElementById('origCanvas').getContext('2d');
   const rc = document.getElementById('rightCanvas').getContext('2d');
 
-  oc.clearRect(0,0,SZ,SZ); oc.drawImage(tmp, 0, 0, w, h, 0, 0, SZ, SZ);
+  // ORIGINAL
+  oc.clearRect(0,0,SZ,SZ);
+  oc.drawImage(tmp, 0, 0, w, h, 0, 0, SZ, SZ);
 
-  lc.clearRect(0,0,SZ,SZ);
-  lc.drawImage(tmp, 0, 0, cx, h, 0, 0, SZ/2, SZ);
-  lc.save(); lc.translate(SZ,0); lc.scale(-1,1);
-  lc.drawImage(tmp, 0, 0, cx, h, 0, 0, SZ/2, SZ); lc.restore();
+  function renderMeiaFace(ctx, srcStartX, isRight) {
+    // Canvas temporário com a metade
+    const temp = document.createElement('canvas');
+    temp.width = half; temp.height = SZ;
+    temp.getContext('2d').drawImage(tmp, srcStartX, 0, mid, h, 0, 0, half, SZ);
 
-  rc.clearRect(0,0,SZ,SZ);
-  rc.drawImage(tmp, cx, 0, cx, h, 0, 0, SZ/2, SZ);
-  rc.save(); rc.translate(SZ,0); rc.scale(-1,1);
-  rc.drawImage(tmp, cx, 0, cx, h, 0, 0, SZ/2, SZ); rc.restore();
+    ctx.clearRect(0, 0, SZ, SZ);
+
+    if (!isRight) {
+      // ESQUERDA: normal à esquerda, espelhado à direita
+      ctx.drawImage(temp, 0, 0, half, SZ);
+      ctx.save();
+      ctx.translate(SZ, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(temp, 0, 0, half, SZ);
+      ctx.restore();
+    } else {
+      // DIREITA: espelhado à esquerda, normal à direita
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.drawImage(temp, -half, 0, half, SZ);
+      ctx.restore();
+      ctx.drawImage(temp, half, 0, half, SZ);
+    }
+  }
+
+  // ESQUERDA (lado direito duplicado)
+  renderMeiaFace(lc, 0, false);
+
+  // DIREITA (lado esquerdo duplicado)
+  renderMeiaFace(rc, mid, true);
 }
 
-document.getElementById('btn-comecar-quiz').addEventListener('click', () => { show('sec-quiz'); setTimeout(iniciarQuiz, 80); });
+document.getElementById('btn-comecar-educacao').addEventListener('click', () => {
+  mostrarEducacao();
+  show('sec-education');
+});
+
+document.getElementById('btn-para-quiz').addEventListener('click', () => {
+  show('sec-quiz');
+  setTimeout(iniciarQuiz, 80);
+});
+
+document.getElementById('btn-voltar-faces').addEventListener('click', () => {
+  show('sec-faces');
+});
+
+function mostrarEducacao() {
+  const canvas = document.getElementById('education-canvas');
+  const ctx = canvas.getContext('2d');
+  const img = S.capturedImg;
+
+  if (!img) return;
+
+  // Desenhar a imagem capturada
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  // Desenhar linha divisória vertical no meio (herança paterna | herança materna)
+  const cx = canvas.width / 2;
+  ctx.strokeStyle = '#C4973A';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(cx, 0);
+  ctx.lineTo(cx, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Labels nas laterais
+  ctx.fillStyle = '#FFD700';
+  ctx.font = 'bold 12px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('PATERNA', cx - 50, 20);
+  ctx.fillText('MATERNA', cx + 50, 20);
+}
 document.getElementById('btn-refazer').addEventListener('click', () => {
   cancelarContagem(); encaixado = false; okFrames = 0;
   ultimosLandmarks = null;
