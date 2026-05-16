@@ -1,8 +1,31 @@
 # MagicFace — Checkpoint Desenvolvimento
 
-**Data:** 2026-05-15  
-**Status:** 🔄 EM DESENVOLVIMENTO - CHECKPOINT SALVO  
-**Próximo Passo:** Reescrever system prompt com rigor + testes em mobile
+**Data:** 2026-05-16  
+**Status:** ✅ FLUXO COMPLETO FUNCIONANDO - DEPLOYADO  
+**Próximo Passo:** Validar qualidade das recomendações do protocolo + reescrever system prompt
+
+---
+
+## ✅ SESSÃO 2026-05-16 COMPLETADA
+
+### Restauração Education Section
+- ✅ Seção Education/Ancestralidade restaurada entre meias-faces e quiz
+- ✅ Explicação de heranças faciais (paterna/materna) com visual da foto dividida
+- ✅ Canvas com linha divisória no rosto (Marquardt)
+- ✅ Navegação: Faces → Education → Quiz → Resultado
+
+### Fix Crítico: Meias-Faces Rendering
+- ✅ **PROBLEMA:** Meia-face direita estava com "bochecha com bochecha" (não formava rosto)
+- ✅ **CAUSA:** Renderização igual para esquerda e direita não funciona
+- ✅ **SOLUÇÃO:** Lógica diferente:
+  - **ESQUERDA:** normal à esquerda + espelhado à direita
+  - **DIREITA:** espelhado à esquerda + normal à direita
+- ✅ **RESULTADO:** Meias-faces agora idênticas à referência 03faces.jpeg
+
+### Deploy & Commit
+- ✅ Pushed to GitHub: commit `2f67c40`
+- ✅ Auto-deploy para Vercel em progresso
+- ✅ URL produção: https://magicface-sand.vercel.app
 
 ---
 
@@ -54,38 +77,47 @@
 
 ---
 
-## ⚠️ PRÓXIMA SESSÃO: REESCREVER SYSTEM PROMPT
+## 🎯 PRÓXIMA SESSÃO: VALIDAR & OTIMIZAR PROTOCOLO
 
-### Tarefas (Amanhã)
+### Tarefas para 2026-05-17
 
-1. **Analisar exatamente o que você quer**
-   - Qual é a conexão REAL entre respostas e recomendações?
-   - Qual tom você quer (mentor acessível? técnico? prático?)
-   - Quais cortes específicos você recomenda por combinação?
+1. **Testar Múltiplas Combinações de Quiz**
+   - Testar ~5-10 combinações diferentes de respostas
+   - Validar se as recomendações fazem SENTIDO
+   - Anotar qual tipo de resposta gera boa recomendação vs ruim
 
-2. **Reescrever system prompt com RIGOR**
-   - Regras específicas: "Se X + Y → recomenda Z"
-   - Menos genérico, mais direto
-   - Tom alinhado com sua visão
+2. **Reescrever System Prompt com RIGOR**
+   - Regras explícitas: "Se rosto LONGO + linhas RETAS → recomenda X"
+   - Conectar quiz direto ao corte (não genérico)
+   - Tom acessível (não acadêmico)
+   - Inspirar em: https://ossegredosdaimagem.com/analise/
 
-3. **Testar em Mobile** 
-   - Você vai testar várias opções no celular
-   - Pode validar se as recomendações fazem sentido
+3. **Validar em Mobile**
+   - URL produção: https://magicface-sand.vercel.app
+   - Testar fluxo completo em celular
+   - Câmera, faces, education, quiz, resultado
 
 ---
 
-## 📋 Para Amanhã
+## 📋 Estado Atual (Checkpoint 2026-05-16)
 
-**IMPORTANTE:** Quando retomar, você pode:
-- ✅ Aproveitar a estrutura atual (4 seções, fluxo, integração)
-- ✅ Reutilizar `protocolo-gerador.js` e backend
-- ❌ Reescrever apenas o `system-prompt-magicface.js`
+**✅ FUNCIONANDO:**
+- Câmera com detecção facial (MediaPipe)
+- Meias-faces split-face correto (esquerda | meio | direita)
+- Education section com explicação de heranças
+- Quiz com 10 perguntas
+- API integrada com Claude (gera protocolo)
+- Deploy automático via GitHub → Vercel
 
-**O que analisar hoje:**
-- Teste vários quizzes no celular
-- Veja qual tipo de recomendação faz sentido
-- Anote as combinações que funcionam
-- Mostre amanhã para eu refazer o prompt com base nisso
+**❌ PRECISA REVISAR:**
+- System prompt muito genérico (gera recomendações vagas)
+- Falta conexão rigorosa: quiz → corte específico
+- Tom muito técnico/acadêmico
+
+**IMPORTANTE:** Quando retomar:
+- ✅ Não mexer em: index.html (câmera/faces/education/quiz)
+- ✅ Não mexer em: protocolo-gerador.js (integração funciona)
+- ❌ **REESCREVER APENAS:** `system-prompt-magicface.js`
 
 ---
 
