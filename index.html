@@ -366,7 +366,7 @@ function processarRosto(landmarks) {
 
   const centralH = Math.abs(cx - 0.5) < 0.07;
   const centralV = Math.abs(cy - 0.44) < 0.07;
-  const tamanho  = largura > dw * 0.32 && largura < dw * 0.78;
+  const tamanho  = largura > dw * 0.32 && largura < dw * 0.95; // aumentado o limite máximo
 
   if (centralH && centralV && tamanho) {
     okFrames++;
@@ -437,11 +437,21 @@ function desenharMascara(landmarks, isEncaixado) {
     ctx.shadowBlur = 0;
   }
 
+  // Calcular centro X e fator de expansão lateral (aplica a TUDO)
+  let sumX = 0;
+  for (const lm of landmarks) sumX += (1 - lm.x) * dw;
+  const centerX = sumX / landmarks.length;
+  const EXPANSION_FACTOR = 2.3; // ajustável
+
   // Converter landmark (normalizado) → pixel no canvas (com espelhamento invertido)
   function p(idx) {
     const lm = landmarks[idx];
     if (!lm) return null;
-    return { x: (1 - lm.x) * dw, y: lm.y * dh };
+    const x = (1 - lm.x) * dw;
+    const y = lm.y * dh;
+    // Aplicar expansão lateral
+    const expandedX = centerX + (x - centerX) * EXPANSION_FACTOR;
+    return { x: expandedX, y: y };
   }
 
   function path(indices, fechar = false, alpha = 1) {
@@ -464,11 +474,11 @@ function desenharMascara(landmarks, isEncaixado) {
 
   if (ovalPts.length > 2 && pForehead && pChin) {
     const faceH = pChin.y - pForehead.y;
-    // Ponto 10 fica no meio da testa → hairline está ~22% acima
-    const hairOffset = faceH * 0.22;
-    const upperLimit = pForehead.y + faceH * 0.28;
+    // Ponto 10 fica no meio da testa → hairline está ~15% acima (reduzido de 22%)
+    const hairOffset = faceH * 0.15;
+    const upperLimit = pForehead.y + faceH * 0.20;
 
-    // Mover pontos superiores do oval proporcionalmente para cima até a hairline
+    // Ajuste vertical da testa (hairline)
     const adjusted = ovalPts.map(pt => {
       if (pt.y < upperLimit) {
         const ratio = 1 - (pt.y - pForehead.y) / (upperLimit - pForehead.y);
@@ -673,35 +683,91 @@ function opts(opcoes) {
 async function iniciarQuiz() {
   chatEl.innerHTML = ''; S.quiz = {};
 
-  await msg('Olhando as imagens, para você seu rosto está mais para...');
+  // P1: Percepção do rosto no espelho
+  await msg('Como você percebe seu rosto no espelho?');
   S.quiz.percepcaoRosto = await opts([
-    { label: 'Longo demais', value: 'longo' },
-    { label: 'Largo demais', value: 'largo' },
-    { label: 'Equilibrado',  value: 'equilibrado' }
+    { label: 'Parece longo — quero mais equilíbrio',       value: 'longo' },
+    { label: 'Parece largo ou redondo — quero verticalidade', value: 'largo' },
+    { label: 'Parece equilibrado — quero potencializar',   value: 'equilibrado' }
   ]);
 
-  if (S.quiz.percepcaoRosto !== 'equilibrado') {
-    await msg('Isso te gera algum desconforto?');
-    S.quiz.geraDesconforto = await opts([
-      { label: 'Sim, me incomoda', value: true },
-      { label: 'Não, tranquilo',   value: false }
-    ]);
-  } else { S.quiz.geraDesconforto = null; }
+  // P2: Linhas do rosto
+  await msg('Que tipo de linhas predominam no seu rosto?');
+  S.quiz.linhasRosto = await opts([
+    { label: 'Retas e angulosas (maxilar definido)',  value: 'retas' },
+    { label: 'Curvas e arredondadas (bochechas cheias)', value: 'curvas' },
+    { label: 'Mistura de retas e curvas',             value: 'mistura' }
+  ]);
 
+  // P3: Divisão do cabelo
+  await msg('Você costuma dividir o cabelo ao meio?');
+  S.quiz.divisaoCabelo = await opts([
+    { label: 'Sim, uso muito ao meio',      value: 'sim' },
+    { label: 'Às vezes — depende do dia',   value: 'as_vezes' },
+    { label: 'Não, sempre dividido de lado', value: 'nao' }
+  ]);
+
+  // P4: Franja
   await msg('Você usa franja reta ou côncava acima das sobrancelhas?');
   S.quiz.franja = await opts([
     { label: 'Sim — meu rosto ficou mais largo',      value: 'mais_largo' },
-    { label: 'Sim — meu rosto equilibra com ela',     value: 'equilibra'  },
-    { label: 'Sim — meu nariz fica mais proeminente', value: 'nariz'      },
-    { label: 'Não uso franja',                        value: 'nao_usa'    },
-    { label: 'Gostaria de usar',                      value: 'gostaria'   }
+    { label: 'Sim — meu rosto equilibra com ela',     value: 'equilibra' },
+    { label: 'Sim — meu nariz fica mais proeminente', value: 'nariz' },
+    { label: 'Não uso franja',                        value: 'nao_usa' },
+    { label: 'Gostaria de usar',                      value: 'gostaria' }
   ]);
 
-  await msg('Que linhas você considera predominantes no seu rosto?');
-  S.quiz.linhasRosto = await opts([
-    { label: 'Retas / verticais',     value: 'retas'     },
-    { label: 'Curvas / arredondadas', value: 'curvas'    },
-    { label: 'Diagonais',             value: 'diagonais' }
+  // P5: Queixo/papada
+  await msg('Sobre a região do queixo — você tem papada ou gostaria de definir melhor essa região?');
+  S.quiz.queixo = await opts([
+    { label: 'Sim, gostaria de amenizar',  value: 'sim' },
+    { label: 'Um pouco',                   value: 'um_pouco' },
+    { label: 'Não, está bem',              value: 'nao' }
+  ]);
+
+  // P6: Biotipo do corpo
+  await msg('Agora o corpo — qual silhueta mais parece com a sua?');
+  S.quiz.biotipo = await opts([
+    { label: 'Retângulo (ombros, cintura e quadril na mesma proporção)', value: 'retangulo' },
+    { label: 'Triângulo / Pêra (quadril mais largo que ombros)',       value: 'pera' },
+    { label: 'Triângulo invertido (ombros mais largos que quadril)',   value: 'triangulo_inv' },
+    { label: 'Ampulheta (ombros e quadril equilibrados, cintura definida)', value: 'ampulheta' },
+    { label: 'Oval / Redondo (volume concentrado no centro)',          value: 'oval' }
+  ]);
+
+  // P7: Comprimento do cabelo
+  await msg('Qual o comprimento atual do seu cabelo?');
+  S.quiz.comprimentoCabelo = await opts([
+    { label: 'Curto — acima dos ombros',          value: 'curto' },
+    { label: 'Médio — altura dos ombros ou clavícula', value: 'medio' },
+    { label: 'Longo — próximo da cintura ou abaixo',   value: 'longo' }
+  ]);
+
+  // P8: Combinação de cores
+  await msg('Como você costuma combinar as cores das suas roupas?');
+  S.quiz.coresRoupas = await opts([
+    { label: 'Uso muito preto — cima e baixo',        value: 'preto' },
+    { label: 'Claro em cima, escuro em baixo',        value: 'claro_escuro' },
+    { label: 'Escuro em cima, claro em baixo',        value: 'escuro_claro' },
+    { label: 'Tons parecidos no corpo inteiro',       value: 'tons_parecos' },
+    { label: 'Misturo sem regra',                     value: 'mistura' }
+  ]);
+
+  // P9: Cinto / detalhe na cintura
+  await msg('Você costuma marcar a cintura com cinto ou detalhe?');
+  S.quiz.cintura = await opts([
+    { label: 'Sim',        value: 'sim' },
+    { label: 'Raramente',  value: 'raramente' },
+    { label: 'Nunca',      value: 'nunca' }
+  ]);
+
+  // P10: Imagem que quer transmitir
+  await msg('Que imagem você quer transmitir no dia a dia?');
+  S.quiz.imagem = await opts([
+    { label: 'Autoridade e presença (estrutura, poder, seriedade)', value: 'autoridade' },
+    { label: 'Afeto e delicadeza (acolhimento, suavidade)',         value: 'afeto' },
+    { label: 'Dinamismo e modernidade (energia, ousadia, movimento)', value: 'dinamismo' },
+    { label: 'Sensualidade elegante (presença feminina forte)',     value: 'sensualidade' }
   ]);
 
   await msg('Analisando...'); await wait(850);
@@ -711,58 +777,93 @@ async function iniciarQuiz() {
 // ─────────────────────────────────────────────
 //  REGRAS
 // ─────────────────────────────────────────────
-function gerarResultado() {
+async function gerarResultado() {
+  console.log('=== INICIANDO GERAÇÃO DE RESULTADO ===');
   const q = S.quiz;
-  let comp;
-  if (q.percepcaoRosto === 'longo' && q.geraDesconforto)
-    comp = { direcao:'lado_mais_alto', efeito:'equilíbrio', explicacao:'Observe qual lado aparece mais alto nas imagens. Jogue o cabelo para esse lado, expondo o lado mais baixo e largo. Isso cria equilíbrio instantâneo.' };
-  else if (q.percepcaoRosto === 'largo' && q.geraDesconforto)
-    comp = { direcao:'lado_mais_baixo', efeito:'projeção vertical', explicacao:'Observe qual lado aparece mais baixo nas imagens. Jogue o cabelo para esse lado, expondo o lado mais alto. Isso cria projeção vertical e afina a percepção do rosto.' };
-  else
-    comp = { direcao:'ambas_opções', efeito:'ferramenta diária', explicacao:'Seu rosto está equilibrado. Use sua assimetria natural como ferramenta: em dias de inchaço exponha o lado mais alto para alongar; em outros, exponha o lado mais baixo para ampliar.' };
-
-  const franjaMap = {
-    mais_largo: 'Compense com gola quadrada ou retangular (linha fria). Meça o tamanho da franja e aplique essa medida para baixo a partir da gola. Evite gola em U.',
-    equilibra:  'Atenção: se seu rosto tem linhas curvilíneas, o equilíbrio vem da franja reta quebrando as curvas. Não adicione mais curvas — evite gola em U, brincos e óculos arredondados.',
-    nariz:      'O cabelo dividido no meio cria linha vertical que espelha o nariz, gerando ênfase. Jogue o cabelo para o lado — qualquer lado. Isso quebra a linha vertical e reduz o foco no nariz.',
-    nao_usa:    null,
-    gostaria:   q.linhasRosto === 'curvas' ? 'Com linhas curvas predominando, franja RETA é a melhor opção — linha fria que atenua as curvas.'
-              : q.linhasRosto === 'retas'  ? 'Com linhas retas predominando, franja CÔNCAVA pode ser interessante — adiciona curva que quebra a rigidez.'
-              :                              'Com diagonais predominando, tanto franja reta quanto côncava funcionam. Escolha pela preferência.'
-  };
-
-  const linhasMap = {
-    retas:     { classe:'Fria',              alerta:'Evite excesso de retas adicionais — criam rigidez visual.',                    sugestao:'Adicione curvas ou diagonais: gola em U/V, brincos orgânicos, óculos arredondados.' },
-    curvas:    { classe:'Quente / Emocional', alerta:'Evite reforçar curvas: gola U, brincos e óculos arredondados amplificam.',    sugestao:'Use linhas frias: gola quadrada ou retangular, brincos geométricos, óculos angulares.' },
-    diagonais: { classe:'Dinâmica / Instável',alerta:'Excesso de diagonais gera agitação visual.',                                  sugestao:'Equilibre com retas frias: gola quadrada, brincos verticais simples.' }
-  };
+  console.log('Quiz respondido:', q);
 
   S.resultado = {
     imagens: {
-      meiaFaceEsquerda: document.getElementById('leftCanvas').toDataURL('image/jpeg',0.75),
-      original:         document.getElementById('origCanvas').toDataURL('image/jpeg',0.75),
-      meiaFaceDireita:  document.getElementById('rightCanvas').toDataURL('image/jpeg',0.75)
+      meiaFaceEsquerda: document.getElementById('leftCanvas').toDataURL('image/jpeg', 0.75),
+      original:         document.getElementById('origCanvas').toDataURL('image/jpeg', 0.75),
+      meiaFaceDireita:  document.getElementById('rightCanvas').toDataURL('image/jpeg', 0.75)
     },
     quiz: q,
-    analise: {
-      compensacaoAssimetria: comp,
-      analiseFrenja: { situacao: q.franja, sugestao: franjaMap[q.franja] },
-      analiseLinhas: linhasMap[q.linhasRosto]
-    }
+    protocolo: null,
+    carregando: true
   };
+
+  show('sec-result');
+  renderCards(S.resultado);
+
+  // Chamar IA para gerar protocolo
+  const nomeUsuaria = document.getElementById('nome-usuario')?.textContent || 'Você';
+  console.log('Nome da usuária:', nomeUsuaria);
+
+  const protocolo = await gerarProtocoloComIA(nomeUsuaria, q, S.resultado.imagens);
+  console.log('Protocolo retornado:', protocolo ? 'SIM' : 'NÃO');
+
+  S.resultado.protocolo = protocolo;
+  S.resultado.carregando = false;
+
   renderCards(S.resultado);
 }
 
 function renderCards(res) {
-  const c = document.getElementById('cards-resultado'); c.innerHTML = '';
-  const a = res.analise;
-  mkCard(c,'Compensação de Assimetria',`<p><span class="tag">${a.compensacaoAssimetria.efeito}</span></p><p>${a.compensacaoAssimetria.explicacao}</p>`);
-  if (a.analiseFrenja.sugestao) mkCard(c,'Análise de Franja',`<p>${a.analiseFrenja.sugestao}</p>`);
-  mkCard(c,'Suas Linhas — '+a.analiseLinhas.classe,`<p><span class="tag">Atenção</span> ${a.analiseLinhas.alerta}</p><p><span class="tag">Sugestão</span> ${a.analiseLinhas.sugestao}</p>`);
-  document.getElementById('json-raw').textContent = JSON.stringify({ quiz: res.quiz, analise: res.analise }, null, 2);
+  console.log('🎨 renderCards chamado');
+  console.log('  - carregando:', res.carregando);
+  console.log('  - protocolo existe:', !!res.protocolo);
+
+  const c = document.getElementById('cards-resultado');
+  c.innerHTML = '';
+  const q = res.quiz;
+
+  // 1. MEIAS-FACES
+  mkCard(c, '📸 Suas Meias-Faces', `
+    <div style="display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap;">
+      <img src="${res.imagens.meiaFaceEsquerda}" style="width: 30%; border-radius: 8px; border: 1px solid #333;">
+      <img src="${res.imagens.original}" style="width: 30%; border-radius: 8px; border: 1px solid #333;">
+      <img src="${res.imagens.meiaFaceDireita}" style="width: 30%; border-radius: 8px; border: 1px solid #333;">
+    </div>
+    <p style="font-size: 0.75rem; color: #888; text-align: center;">Esquerda × Original × Direita</p>
+  `);
+
+  // Se ainda está carregando
+  if (res.carregando) {
+    mkCard(c, '⏳ Gerando Protocolo', `
+      <div style="text-align: center; padding: 24px;">
+        <div style="font-size: 2rem; margin-bottom: 12px;">✨</div>
+        <p>Analisando sua assimetria facial e biotipo...</p>
+        <p style="font-size: 0.85rem; color: #888; margin-top: 12px;">Sua IA especialista está gerando recomendações personalizadas</p>
+      </div>
+    `);
+    return;
+  }
+
+  // Se protocolo não foi gerado
+  if (!res.protocolo) {
+    mkCard(c, '⚠️ Protocolo', `
+      <p style="color: #ff9800;">Houve um erro ao gerar o protocolo. Por favor, tente novamente.</p>
+    `);
+    return;
+  }
+
+  // PROTOCOLO GERADO - exibir com as 4 seções
+  // Dividir o protocolo em seções
+  const secoes = res.protocolo.split('**');
+  let protocoloHTML = res.protocolo;
+
+  // Renderizar protocolo como um card único e bem formatado
+  mkCard(c, '👑 Seu Protocolo MagicFace', `
+    <div style="line-height: 1.7; color: #e0e0e0; font-size: 0.95rem;">
+      ${protocoloHTML.replace(/\*\*/g, '<strong style="color: #FFD700;">').replace(/<strong/g, '<strong').replace(/\n\n/g, '<br><br>')}
+    </div>
+  `);
+
+  document.getElementById('json-raw').textContent = JSON.stringify(res.quiz, null, 2);
 }
 
-function mkCard(c,t,h) { const el=document.createElement('div'); el.className='resultado-card'; el.innerHTML=`<h3>${t}</h3>${h}`; c.appendChild(el); }
+function mkCard(c, t, h) { const el = document.createElement('div'); el.className = 'resultado-card'; el.innerHTML = `<h3>${t}</h3>${h}`; c.appendChild(el); }
 
 document.getElementById('btn-toggle-json').addEventListener('click', () => {
   const raw=document.getElementById('json-raw'), btn=document.getElementById('btn-toggle-json');
@@ -790,5 +891,7 @@ document.getElementById('btn-nova-analise').addEventListener('click', () => {
 // ─────────────────────────────────────────────
 iniciarCamera();
 </script>
+<script src="system-prompt-magicface.js"></script>
+<script src="protocolo-gerador.js"></script>
 </body>
 </html>

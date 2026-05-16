@@ -1,0 +1,20 @@
+{
+  "name": "magicface",
+  "version": "1.0.0",
+  "description": "MagicFace - Análise Facial & Recomendação de Corte",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "test": "echo \"Run both servers: http-server -p 3000 & node server.js\""
+  },
+  "keywords": ["visagismo", "corte", "analise-facial"],
+  "author": "Bruno Alves",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
